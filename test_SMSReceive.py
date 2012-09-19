@@ -66,7 +66,7 @@ class TestSMSReceive(unittest.TestCase):
 
     def test1_build_dom_object(self):
         sms = SMSReceive(self.sms)
-        self.assertEqual(sms.inbound_number, '6754535645')
+        self.assertEqual(sms.inbound_number, 6754535645)
         self.assertEqual(sms.inbound_message, 'Here is a test message')
 
     def test2_test_number_extraction(self):

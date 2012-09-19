@@ -15,14 +15,22 @@ class SMSReceive:
 
     def __init__(self, sms_xml):
         self.inbound_number, self.inbound_message = self.parse_xml(sms_xml)
+        if self.debug:
+            self.log("Inbound Number: %s" % self.inbound_number)
         if not self.test:
             numbers = self.get_oncall_config()
+            if self.debug:
+                self.log(numbers)
+
             if numbers:
-                ext_numbers = self.extract_allowed_numbers(numbers)
-                self.allowed_number_list = self.extract_allowed_numbers(
-                                            ext_numbers)
+                self.allowed_number_list = self.extract_allowed_numbers(numbers)
+                if self.debug:
+                    self.log("Allowed Numbers List: %s" % self.allowed_number_list)
+
                 acl_passed = self.check_number_acl(
                         self.inbound_number, self.allowed_number_list)
+                if self.debug:
+                    self.log("ACL Passed %s" % acl_passed)
                 if acl_passed:
                     self.write_to_log_file(self.inbound_message)
             else:
@@ -34,7 +42,7 @@ class SMSReceive:
                 self.get_oncall_config_args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
-        except OSError:
+        except OSError, e:
             ## SMS Number generator not found
             ## Set output to error message
             print self.get_oncall_config_args[0]
@@ -47,8 +55,9 @@ class SMSReceive:
         dom = parseString(sms_xml)
         inbound_message = None
         try:
-            inbound_number = dom.getElementsByTagName('SenderNumber')[1]\
+            inbound_number = dom.getElementsByTagName('SenderNumber')[0]\
                     .firstChild.nodeValue
+            inbound_number = int(inbound_number[-10:])
         except IndexError:
             # No inbound number in payload
             inbound_number = None
@@ -62,12 +71,12 @@ class SMSReceive:
 
     def extract_allowed_numbers(self, number_list):
         tmp = []
-        for number in number_list.split("\n"):
+        for number in number_list.splitlines():
             try:
                 number = int(number[-10:])
-            except ValueError:
-                continue
-            tmp.append(number)
+                tmp.append(number)
+            except (TypeError, ValueError):
+                pass
         return tmp
 
     def write_to_log_file(self, message):
@@ -80,3 +89,7 @@ class SMSReceive:
             return True
         else:
             return False
+    def log(self, message):
+        fh = open(self.log_file, 'a')
+        fh.write("%s\n" % (message))
+        fh.close()
