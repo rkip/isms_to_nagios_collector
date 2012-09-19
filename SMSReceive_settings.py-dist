@@ -1,0 +1,13 @@
+"""
+    First arg of GET_ONCALL_CONFIGS is the path to a file that
+    simply outputs a list of phone numbers, 1 per line
+    to stdout
+"""
+GET_ONCALL_CONFIG_ARGS = ['/path/to/output/script', 'first_arg']
+DEBUG = True
+TEST = True
+"""
+    Path to the file which will be written to upon
+    successful receipt of sms and acl validation
+"""
+LOG_FILE = '/tmp/incoming_sms_log'
