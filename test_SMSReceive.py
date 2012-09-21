@@ -52,12 +52,12 @@ sms_payload = """<?xml version="1.0" encoding="ISO-8859-1"?>
     Including intl prefixes and 1 to area codes
 """
 
-sms_numbers = """6892345109
-1618275516
-+8286439827
-5619193759
-14614449451
-6977636366"""
+sms_numbers = """foo<||>6754535645
+bar<||>1618275516
+baz<||>+8286439827
+yep<||>5619193759
+nope<||>14614449451
+outofnames<||>6977636366"""
 
 class TestSMSReceive(unittest.TestCase):
     def setUp(self):
@@ -72,9 +72,9 @@ class TestSMSReceive(unittest.TestCase):
     def test2_test_number_extraction(self):
         sms = SMSReceive(self.sms)
         final_list = sms.extract_allowed_numbers(self.sms_numbers)
-        self.assertEqual(final_list[0], 6892345109)
-        self.assertEqual(final_list[1], 1618275516)
-        self.assertEqual(final_list[2], 8286439827)
+        self.assertEqual(final_list[0]['number'], 6754535645)
+        self.assertEqual(final_list[1]['number'], 1618275516)
+        self.assertEqual(final_list[2]['number'], 8286439827)
 
     def test3_write_to_file(self):
         try:
@@ -83,23 +83,24 @@ class TestSMSReceive(unittest.TestCase):
             # File does not exist
             pass
         self.assertFalse(os.path.exists(LOG_FILE))
-        sms = SMSReceive(self.sms)
-        sms.write_to_log_file(sms.inbound_message)
+        sms = SMSReceive(self.sms, self.sms_numbers)
         self.assertTrue(os.path.exists(LOG_FILE))
         lines = open(LOG_FILE, 'r').readlines()
         self.assertEqual(len(lines), 1)
-        self.assertEqual(lines[0], 'Here is a test message')
+        self.assertEqual(lines[0], 'foo<||>Here is a test message')
 
     def test4_number_acl_valid(self):
-        sms = SMSReceive(self.sms)
-        sms_number_list = []
-        for n in self.sms_numbers.split("\n"):
-            sms_number_list.append(int(n))
-        self.assertEqual(sms.check_number_acl(6892345109, sms_number_list), True)
+        sms = SMSReceive(self.sms, self.sms_numbers)
+        sms_number_list = sms.extract_allowed_numbers(self.sms_numbers)
+        self.assertEqual(sms.check_number_acl(6754535645, sms_number_list), True)
 
     def test5_number_acl_invalid(self):
-        sms = SMSReceive(self.sms)
-        sms_number_list = []
-        for n in self.sms_numbers.split("\n"):
-            sms_number_list.append(int(n))
+        sms = SMSReceive(self.sms, self.sms_numbers)
+        sms_number_list = sms.extract_allowed_numbers(self.sms_numbers)
         self.assertEqual(sms.check_number_acl(9992345109, sms_number_list), False)
+
+    def test6_get_name_by_number(self):
+        sms = SMSReceive(self.sms, self.sms_numbers)
+        sms_number_list = sms.extract_allowed_numbers(self.sms_numbers)
+        self.assertEqual(sms.get_name_by_number(sms_number_list,6754535645), 'foo')
+
